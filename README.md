@@ -1,50 +1,152 @@
 # ExamPilot NG
 
-A responsive React + Vite starter for ExamPilot NG, a study platform for Nigerian students. This package is a standalone reconstruction, not an exact export of every file in the Floot project.
+**Study smarter. Practise better. Ace your exams.**
+
+An AI-powered exam preparation platform for Nigerian university students. Organise your courses, save lecture notes, get AI explanations grounded in your own material, generate timed practice tests, and track your progress — all in one place.
+
+---
 
 ## Features
-- Responsive dashboard and mobile navigation
-- Courses and study-material management
-- CBT practice quiz with timer, scoring, explanations, and history
-- Revision task planner
-- Study assistant UI with a server-side AI endpoint
-- Local browser persistence for demo courses, materials, tasks, and quiz history
-- API key stays on the server in `.env`
 
-## Requirements
-- Node.js 18.18+ (Node 20 LTS recommended)
-- npm
+- **Courses** — create and organise your semester courses
+- **Study materials** — paste notes or upload `.txt` / `.md` files
+- **AI study buddy** — ask questions grounded in your own notes (server-side, key never exposed to browser)
+- **Question generator** — AI-generated MCQs saved to your question bank
+- **CBT practice** — timed tests with server-side timing and scoring; answers never sent to the client before submission
+- **Results & review** — per-question review, explanations, topic breakdown
+- **Performance history** — score trend chart, weak-topic recommendations from real data
+- **Revision planner** — task CRUD with due dates, overdue detection, completion tracking
+- **Settings** — profile update, password change, logout
 
-## Run the website
-1. Extract the ZIP.
-2. Open the `exampilot-ng` folder in VS Code.
-3. In a terminal run:
+---
 
-   ```bash
-   npm install
-   npm run dev
-   ```
+## Tech stack
 
-4. Open the local URL Vite prints (usually `http://localhost:5173`).
+| Layer    | Technology |
+|----------|-----------|
+| Frontend | React 18, React Router v7, Lucide icons |
+| Backend  | Node.js, Express 4 |
+| Database | SQLite via better-sqlite3 (WAL mode, foreign keys) |
+| Auth     | express-session + bcryptjs (sessions stored in SQLite) |
+| AI       | OpenAI-compatible API (server-side only) |
+| Build    | Vite 6 |
 
-The front end works without an AI key. The AI assistant shows a helpful configuration message until the backend is running and a valid key is configured.
+---
 
-## Enable AI
-1. Copy `.env.example` to `.env`.
-2. Replace `AI_API_KEY` with a newly generated provider key. Do not reuse a key that has been posted in chat.
-3. Confirm `AI_BASE_URL` and `AI_MODEL` match your provider.
-4. In another terminal run `npm run server`.
-5. The Vite development server proxies `/api` requests to port 8787.
+## Prerequisites
 
-For both servers at once, run `npm run dev:full`.
+- **Node.js 18+** (or 20+)
+- An **OpenAI-compatible API key** for the AI assistant and question generator (optional — all other features work without it)
 
-## Build for deployment
+---
+
+## Local setup
+
+### 1. Clone and install
+
 ```bash
-npm run build
-npm run preview
+git clone https://github.com/olag29144/ExamPilot-NG.git
+cd ExamPilot-NG
+npm install
 ```
 
-The static frontend can be hosted on a static host. The `server/` API must be deployed to a server environment that supports Node.js and environment variables. Do not deploy `.env`.
+### 2. Configure environment variables
 
-## Important
-This standalone starter uses localStorage for demo data. It is not a production multi-user database/authentication implementation. Add secure authentication, a real database, rate limits, and deployment-specific security before using it with real student accounts.
+Copy the example file and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and set:
+
+```env
+# Required
+SESSION_SECRET=replace_with_a_long_random_secret_string
+
+# Optional — required only for AI features
+AI_API_KEY=your_openai_or_compatible_key
+AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4o-mini
+
+# Server port (default 3001)
+PORT=3001
+
+# Frontend origin for CORS (default shown)
+CLIENT_ORIGIN=http://localhost:5173
+```
+
+> **Never commit your `.env` file.** It is already in `.gitignore`.
+
+### 3. Run in development
+
+Run both the API server and the Vite dev server together:
+
+```bash
+npm run dev:full
+```
+
+Or run them separately in two terminals:
+
+```bash
+# Terminal 1 — API server (port 3001)
+npm run server
+
+# Terminal 2 — Vite dev server (port 5173)
+npm run dev
+```
+
+Open **http://localhost:5173** in your browser.
+
+### 4. Production build
+
+```bash
+npm run build       # compiles frontend to dist/
+npm run server      # serves only the API; serve dist/ with a static host or nginx
+```
+
+The SQLite database file is created automatically at `data/exampilot.db` on first run. The `data/` directory is gitignored.
+
+---
+
+## Environment variables reference
+
+| Variable        | Required | Description |
+|-----------------|----------|-------------|
+| `SESSION_SECRET`| Yes      | Long random string used to sign session cookies |
+| `PORT`          | No       | API server port (default `3001`) |
+| `AI_API_KEY`    | For AI   | Your OpenAI-compatible provider API key |
+| `AI_BASE_URL`   | For AI   | API base URL (default `https://api.openai.com/v1`) |
+| `AI_MODEL`      | For AI   | Model name (default `gpt-4o-mini`) |
+| `CLIENT_ORIGIN` | No       | CORS allowed origin (default `http://localhost:5173`) |
+
+---
+
+## AI features
+
+The AI study buddy and question generator require a valid `AI_API_KEY`. If the key is missing or invalid, all other features (courses, materials, CBT, planner, etc.) continue to work normally. The app shows a clear error message when AI is unavailable — it never returns fake generated content.
+
+All model calls happen on the server. The API key is never included in the browser bundle or client-side code.
+
+---
+
+## Security notes
+
+- Passwords are hashed with bcryptjs (cost factor 12). Plaintext passwords are never stored or logged.
+- Sessions are stored server-side in SQLite and signed with `SESSION_SECRET`.
+- Every private API endpoint checks ownership server-side — UI hiding is not the only protection.
+- CBT scoring and timing are enforced by the server. Correct answers are not sent to the browser before submission.
+- Input is validated with Zod on all API endpoints.
+- Rate limiting is applied to auth and AI endpoints.
+- File uploads accept only `.txt` and `.md` (checked by extension and MIME type), max 1 MB.
+
+---
+
+## Known limitations
+
+- Email addresses cannot be changed after registration in this version.
+- Password reset via email is not implemented (no email provider configured).
+- PDF, Word, and image file uploads are not supported — notes must be plain text or Markdown.
+- The AI question generator requires a paid API key from an OpenAI-compatible provider.
+- AI-generated questions are practice material only. They are not official, leaked, or guaranteed exam questions.
+- The app has not undergone a formal security audit. Do not use it to store sensitive personal data beyond standard study notes.
