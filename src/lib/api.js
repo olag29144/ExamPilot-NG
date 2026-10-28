@@ -1,10 +1,36 @@
 const BASE = "/api";
 
+function getStoredUserId() {
+  try {
+    return localStorage.getItem("exampilot_uid") || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setStoredUserId(id) {
+  try {
+    if (id) {
+      localStorage.setItem("exampilot_uid", id);
+    } else {
+      localStorage.removeItem("exampilot_uid");
+    }
+  } catch {
+    // Ignore storage restrictions
+  }
+}
+
 async function request(path, opts = {}) {
+  const uid = getStoredUserId();
+  const headers = {
+    "Content-Type": "application/json",
+    ...(uid ? { "X-User-Id": uid } : {}),
+    ...opts.headers
+  };
   const res = await fetch(`${BASE}${path}`, {
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...opts.headers },
-    ...opts
+    ...opts,
+    headers
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
@@ -13,11 +39,25 @@ async function request(path, opts = {}) {
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const auth = {
-  me:       ()      => request("/auth/me"),
-  login:    body    => request("/auth/login",    { method: "POST", body: JSON.stringify(body) }),
-  register: body    => request("/auth/register", { method: "POST", body: JSON.stringify(body) }),
-  logout:   ()      => request("/auth/logout",   { method: "POST" }),
-  profile:  body    => request("/auth/profile",  { method: "PATCH", body: JSON.stringify(body) }),
+  me:       ()         => request("/auth/me"),
+  login:    async body => {
+    const data = await request("/auth/login", { method: "POST", body: JSON.stringify(body) });
+    if (data?.user?.id) setStoredUserId(data.user.id);
+    return data;
+  },
+  register: async body => {
+    const data = await request("/auth/register", { method: "POST", body: JSON.stringify(body) });
+    if (data?.user?.id) setStoredUserId(data.user.id);
+    return data;
+  },
+  logout:   async ()   => {
+    try {
+      await request("/auth/logout", { method: "POST" });
+    } finally {
+      setStoredUserId(null);
+    }
+  },
+  profile:  body       => request("/auth/profile",  { method: "PATCH", body: JSON.stringify(body) }),
 };
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -44,15 +84,19 @@ export const materials = {
   create: body      => request("/materials",      { method: "POST",  body: JSON.stringify(body) }),
   update: (id, body)=> request(`/materials/${id}`,{ method: "PATCH", body: JSON.stringify(body) }),
   remove: id        => request(`/materials/${id}`,{ method: "DELETE" }),
-  upload: formData  => fetch(`${BASE}/materials/upload`, {
-    method: "POST",
-    credentials: "include",
-    body: formData,
-  }).then(async r => {
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.error || "Upload failed");
-    return d;
-  }),
+  upload: formData  => {
+    const uid = getStoredUserId();
+    return fetch(`${BASE}/materials/upload`, {
+      method: "POST",
+      credentials: "include",
+      headers: uid ? { "X-User-Id": uid } : {},
+      body: formData,
+    }).then(async r => {
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Upload failed");
+      return d;
+    });
+  },
 };
 
 // ── AI Conversations ──────────────────────────────────────────────────────────

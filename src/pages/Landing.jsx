@@ -1,147 +1,238 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  GraduationCap, BookOpen, BrainCircuit, Target, TrendingUp, CalendarDays,
-  ArrowRight, CheckCircle2, Sparkles, ListChecks, Clock3, BarChart2
+  GraduationCap,
+  FileText,
+  Sparkles,
+  CheckSquare,
+  Clock,
+  Target,
+  Calendar,
+  BookOpen,
+  TrendingUp,
 } from "lucide-react";
-
-const FEATURES = [
-  { icon: BookOpen,     title: "Organised courses",      desc: "Keep all your courses, lecture notes, and summaries in one place." },
-  { icon: BrainCircuit, title: "AI study buddy",         desc: "Ask questions grounded in your own notes and get clear, honest explanations." },
-  { icon: ListChecks,   title: "Practice questions",     desc: "Generate multiple-choice questions from your materials at any difficulty." },
-  { icon: Clock3,       title: "Timed CBT practice",     desc: "Simulate exam conditions with server-timed, server-scored practice tests." },
-  { icon: BarChart2,    title: "Performance tracking",   desc: "Review your scores, spot weak topics, and focus your revision where it matters." },
-  { icon: CalendarDays, title: "Revision planner",       desc: "Create revision tasks, set due dates, and track your daily study progress." },
-];
-
-const HOW = [
-  { n: "1", title: "Save your notes",     desc: "Paste lecture notes or upload .txt / .md files, organised by course." },
-  { n: "2", title: "Understand with AI",  desc: "Ask the AI to explain any concept using your own saved material as context." },
-  { n: "3", title: "Generate questions",  desc: "Create targeted practice MCQs at easy, medium, or hard difficulty." },
-  { n: "4", title: "Take a timed test",   desc: "Start a CBT practice session — the server controls timing and scoring." },
-  { n: "5", title: "Review and improve",  desc: "Study your results, identify weak topics, and plan your next session." },
-];
 
 export default function Landing() {
   return (
-    <div className="landing">
-      {/* ── Nav ── */}
-      <header className="landing-nav">
-        <div className="landing-nav-inner">
-          <Link to="/" className="brand">
-            <span className="brand-mark"><GraduationCap size={21} /></span>
-            <span>ExamPilot <b>NG</b></span>
+    <div className="landing-page-exact">
+      {/* ── Top Navbar ── */}
+      <header className="ep-navbar">
+        <div className="ep-navbar-inner">
+          <Link to="/" className="ep-brand">
+            <GraduationCap size={22} className="ep-brand-icon" />
+            <span className="ep-brand-text">ExamPilot NG</span>
           </Link>
-          <nav className="landing-links" aria-label="Site navigation">
+          <nav className="ep-nav-links">
             <a href="#features">Features</a>
-            <a href="#how">How it works</a>
-            <Link to="/login" className="btn btn-outline btn-sm">Sign in</Link>
-            <Link to="/register" className="btn btn-primary btn-sm">Get started</Link>
+            <a href="#how-it-works">How it works</a>
+            <a href="#benefits">Benefits</a>
+            <Link to="/login" className="ep-nav-login">Log in</Link>
+            <Link to="/register" className="ep-btn-signup">Sign up</Link>
           </nav>
         </div>
       </header>
 
-      {/* ── Hero ── */}
-      <section className="landing-hero">
-        <div className="hero-content">
-          <span className="landing-eyebrow"><Sparkles size={13} /> AI-POWERED EXAM PREP FOR NIGERIAN STUDENTS</span>
-          <h1>Study smarter.<br /><em>Practise better.</em><br />Ace your exams.</h1>
-          <p>
-            ExamPilot NG combines your lecture notes, an AI study assistant, timed
-            practice tests, and a revision planner into one focused study system.
+      {/* ── Hero Section ── */}
+      <section className="ep-hero">
+        <div className="ep-hero-inner">
+          <span className="ep-hero-kicker">EXAM PREPARATION FOR NIGERIAN UNIVERSITY STUDENTS</span>
+          <h1 className="ep-hero-title">
+            Study smarter. Practise better.<br />
+            Ace your exams.
+          </h1>
+          <p className="ep-hero-description">
+            Reading notes is not the same as being ready for the exam hall. ExamPilot NG connects your lecture notes, AI explanations, practice questions, timed CBT tests and your results in one place, so you can see what you know and what to revise next.
           </p>
-          <div className="hero-actions">
-            <Link to="/register" className="btn btn-primary btn-large">
-              Create free account <ArrowRight size={17} />
-            </Link>
-            <Link to="/login" className="btn btn-outline btn-large">Sign in</Link>
+          <div className="ep-hero-actions">
+            <Link to="/register" className="ep-btn-hero-primary">Create a free account</Link>
+            <Link to="/login" className="ep-btn-hero-secondary">Log in</Link>
           </div>
-          <p className="hero-note">No exam board affiliations. AI-generated questions are practice only — never official or leaked questions.</p>
         </div>
-        <div className="hero-graphic" aria-hidden="true">
-          <div className="hg-ring hg-ring-a" />
-          <div className="hg-ring hg-ring-b" />
-          <div className="hg-card hg-card-main">
-            <div className="hg-card-row"><span className="hg-dot teal" /><strong>CBT Practice</strong></div>
-            <div className="hg-progress-row"><span>Score</span><b>78%</b></div>
-            <div className="hg-bar"><span style={{ width: "78%" }} /></div>
-            <div className="hg-qs">
-              {[1,1,1,0,1,1,0,1].map((c,i) => (
-                <span key={i} className={c ? "hg-q-correct" : "hg-q-wrong"} />
-              ))}
+      </section>
+
+      {/* ── Main Content Area on Ivory Background ── */}
+      <div className="ep-body-container">
+        {/* ── One Connected Study System Section ── */}
+        <section className="ep-section" id="features">
+          <div className="ep-section-inner">
+            <h2 className="ep-section-heading">One connected study system</h2>
+            <p className="ep-section-subheading">
+              Not another chatbot. Every feature feeds the next: your notes lead to questions, questions to tests, tests to revision.
+            </p>
+
+            <div className="ep-cards-grid-3">
+              {/* Card 1 */}
+              <div className="ep-feature-card">
+                <div className="ep-icon-box">
+                  <FileText size={20} />
+                </div>
+                <h3 className="ep-card-title">Your own notes</h3>
+                <p className="ep-card-text">
+                  Paste or upload your lecture notes and keep them organised by course, semester and level.
+                </p>
+              </div>
+
+              {/* Card 2 */}
+              <div className="ep-feature-card">
+                <div className="ep-icon-box">
+                  <Sparkles size={20} />
+                </div>
+                <h3 className="ep-card-title">Explanations from your notes</h3>
+                <p className="ep-card-text">
+                  Ask for summaries, simple explanations, examples and step-by-step breakdowns grounded in what you saved. If your notes don't cover it, the AI says so.
+                </p>
+              </div>
+
+              {/* Card 3 */}
+              <div className="ep-feature-card">
+                <div className="ep-icon-box">
+                  <CheckSquare size={20} />
+                </div>
+                <h3 className="ep-card-title">Practice questions</h3>
+                <p className="ep-card-text">
+                  Generate multiple-choice questions from a chosen material, with explanations and topic labels.
+                </p>
+              </div>
+
+              {/* Card 4 */}
+              <div className="ep-feature-card">
+                <div className="ep-icon-box">
+                  <Clock size={20} />
+                </div>
+                <h3 className="ep-card-title">Timed CBT practice</h3>
+                <p className="ep-card-text">
+                  Sit a computer-based test with a countdown timer. Scoring and timing are handled on the server.
+                </p>
+              </div>
+
+              {/* Card 5 */}
+              <div className="ep-feature-card">
+                <div className="ep-icon-box">
+                  <Target size={20} />
+                </div>
+                <h3 className="ep-card-title">Weak-topic tracking</h3>
+                <p className="ep-card-text">
+                  Weak topics come from your actual answers across tests. With too little data, nothing is guessed.
+                </p>
+              </div>
+
+              {/* Card 6 */}
+              <div className="ep-feature-card">
+                <div className="ep-icon-box">
+                  <Calendar size={20} />
+                </div>
+                <h3 className="ep-card-title">Revision planner</h3>
+                <p className="ep-card-text">
+                  Plan tasks with due dates and get transparent, rule-based suggestions on what to revise next.
+                </p>
+              </div>
             </div>
           </div>
-          <div className="hg-card hg-card-sm">
-            <Sparkles size={14} />
-            <span>AI answered your question</span>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Features ── */}
-      <section className="landing-section" id="features">
-        <div className="landing-section-inner">
-          <span className="landing-eyebrow">WHAT YOU GET</span>
-          <h2>Everything you need to study effectively</h2>
-          <div className="features-grid">
-            {FEATURES.map(f => (
-              <div className="feature-card" key={f.title}>
-                <div className="feature-icon"><f.icon size={22} /></div>
-                <h3>{f.title}</h3>
-                <p>{f.desc}</p>
+        {/* ── How It Works Section ── */}
+        <section className="ep-section ep-section-how" id="how-it-works">
+          <div className="ep-section-inner">
+            <h2 className="ep-section-heading">How it works</h2>
+
+            <div className="ep-steps-row">
+              <div className="ep-step-item">
+                <div className="ep-step-number">1</div>
+                <h4 className="ep-step-title">Study</h4>
+                <p className="ep-step-text">Add a course and save your notes.</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ── How it works ── */}
-      <section className="landing-section landing-section-alt" id="how">
-        <div className="landing-section-inner">
-          <span className="landing-eyebrow">THE STUDY LOOP</span>
-          <h2>How ExamPilot NG works</h2>
-          <div className="how-list">
-            {HOW.map((h, i) => (
-              <div className="how-item" key={h.n}>
-                <div className="how-num">{h.n}</div>
-                <div>
-                  <strong>{h.title}</strong>
-                  <p>{h.desc}</p>
+              <div className="ep-step-item">
+                <div className="ep-step-number">2</div>
+                <h4 className="ep-step-title">Understand</h4>
+                <p className="ep-step-text">Ask the AI to explain or summarise them.</p>
+              </div>
+
+              <div className="ep-step-item">
+                <div className="ep-step-number">3</div>
+                <h4 className="ep-step-title">Practise</h4>
+                <p className="ep-step-text">Generate questions and take a timed test.</p>
+              </div>
+
+              <div className="ep-step-item">
+                <div className="ep-step-number">4</div>
+                <h4 className="ep-step-title">Measure</h4>
+                <p className="ep-step-text">See your score, answers and explanations.</p>
+              </div>
+
+              <div className="ep-step-item">
+                <div className="ep-step-number">5</div>
+                <h4 className="ep-step-title">Revise</h4>
+                <p className="ep-step-text">Follow the revision suggestions, then test again.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Built for How Students Actually Prepare Section ── */}
+        <section className="ep-section" id="benefits">
+          <div className="ep-section-inner">
+            <h2 className="ep-section-heading">Built for how students actually prepare</h2>
+
+            <div className="ep-cards-grid-3">
+              <div className="ep-feature-card">
+                <div className="ep-icon-box">
+                  <BookOpen size={20} />
                 </div>
-                {i < HOW.length - 1 && <div className="how-arrow" aria-hidden="true"><ArrowRight size={16} /></div>}
+                <h3 className="ep-card-title">Your syllabus, your rules</h3>
+                <p className="ep-card-text">
+                  Universities differ. You organise your own courses and materials; nothing assumes one syllabus.
+                </p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ── CTA ── */}
-      <section className="landing-cta">
-        <div className="landing-section-inner cta-inner">
-          <h2>Ready to take control of your study sessions?</h2>
-          <p>Create an account, add your first course, and start practising today.</p>
-          <Link to="/register" className="btn btn-primary btn-large">
-            Get started — it&apos;s free <ArrowRight size={17} />
-          </Link>
-        </div>
-      </section>
+              <div className="ep-feature-card">
+                <div className="ep-icon-box">
+                  <Clock size={20} />
+                </div>
+                <h3 className="ep-card-title">Practise the CBT way</h3>
+                <p className="ep-card-text">
+                  Get used to one-question-at-a-time screens and a running clock before the real test.
+                </p>
+              </div>
+
+              <div className="ep-feature-card">
+                <div className="ep-icon-box">
+                  <TrendingUp size={20} />
+                </div>
+                <h3 className="ep-card-title">Honest progress</h3>
+                <p className="ep-card-text">
+                  Scores and weak topics come only from your recorded results, so the numbers mean something.
+                </p>
+              </div>
+            </div>
+
+            {/* Disclaimer Callout Box */}
+            <div className="ep-disclaimer-box">
+              <p>
+                AI answers and generated questions can contain mistakes and are not official exam questions. Always check important points against your lecture notes and lecturers' instructions.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* ── Footer ── */}
-      <footer className="landing-footer">
-        <div className="landing-section-inner footer-inner">
-          <div className="brand">
-            <span className="brand-mark brand-mark-sm"><GraduationCap size={17} /></span>
-            <span>ExamPilot <b>NG</b></span>
+      <footer className="ep-footer">
+        <div className="ep-footer-inner">
+          <div className="ep-footer-left">
+            <GraduationCap size={18} className="ep-footer-icon" />
+            <span className="ep-footer-brand">ExamPilot NG</span>
           </div>
-          <nav aria-label="Footer navigation">
-            <Link to="/register">Register</Link>
-            <Link to="/login">Sign in</Link>
+
+          <div className="ep-footer-center">
+            Built for the OPEN//BUILD 2026 Hackathon
+          </div>
+
+          <div className="ep-footer-right">
             <a href="#features">Features</a>
-            <a href="#how">How it works</a>
-          </nav>
-          <p className="footer-note">
-            AI-generated content is for practice only. Always verify with your lecturers and official course materials.
-          </p>
+            <a href="#how-it-works">How it works</a>
+            <Link to="/login">Log in</Link>
+          </div>
         </div>
       </footer>
     </div>

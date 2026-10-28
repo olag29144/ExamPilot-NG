@@ -1,0 +1,7 @@
+{
+  "name": "ExamPilot NG",
+  "description": "ExamPilot NG helps Nigerian university students study smarter with course management, AI-assisted learning, study planner, and CBT exam preparation.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

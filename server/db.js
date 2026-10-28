@@ -128,4 +128,117 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_messages_conv ON ai_messages(conversation_id);
 `);
 
+// ── Initial Seed Data ────────────────────────────────────────────────────────
+try {
+  const userCheck = db.prepare("SELECT COUNT(*) AS count FROM users").get();
+  if (userCheck && userCheck.count === 0) {
+    const importBcrypt = await import("bcryptjs");
+    const bcrypt = importBcrypt.default || importBcrypt;
+    const demoUserId = "demo-user-100";
+    const demoPasswordHash = bcrypt.hashSync("password123", 10);
+
+    db.prepare(`
+      INSERT INTO users (id, name, email, password_hash)
+      VALUES (?, ?, ?, ?)
+    `).run(demoUserId, "Chidi Okonkwo", "demo@exampilot.ng", demoPasswordHash);
+
+    const c1Id = "course-csc201";
+    const c2Id = "course-gst111";
+
+    db.prepare(`
+      INSERT INTO courses (id, user_id, title, course_code, description, semester, academic_level, color)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(c1Id, demoUserId, "Data Structures and Algorithms", "CSC 201", "Core concepts in arrays, linked lists, trees, graphs, and algorithm time complexities.", "First Semester", "200 Level", "blue");
+
+    db.prepare(`
+      INSERT INTO courses (id, user_id, title, course_code, description, semester, academic_level, color)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(c2Id, demoUserId, "Nigerian Peoples and Culture", "GST 111", "Survey of Nigerian ethnic nationalities, indigenous political systems, and cultural heritage.", "First Semester", "100 Level", "emerald");
+
+    const m1Id = "mat-csc201-stacks";
+    db.prepare(`
+      INSERT INTO study_materials (id, user_id, course_id, title, content_text)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      m1Id,
+      demoUserId,
+      c1Id,
+      "Lecture 3: Stacks and Queues Summary",
+      `A stack is a linear data structure following LIFO (Last In First Out). Major operations are push(), pop(), and peek(), all operating in O(1) time complexity. Real-world applications include call stacks in function recursion, undo mechanisms in editors, and syntax parsing for balanced parentheses.\n\nA queue is a FIFO (First In First Out) structure. Enqueue adds to rear; dequeue removes from front. Breadth-first search (BFS) on graphs relies heavily on queues.`
+    );
+
+    const qInsert = db.prepare(`
+      INSERT INTO questions (id, user_id, course_id, material_id, question_text, options, correct_option, explanation, topic, difficulty, source_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    qInsert.run(
+      "q-1",
+      demoUserId,
+      c1Id,
+      m1Id,
+      "What is the average time complexity for push and pop operations on a standard array-backed stack?",
+      JSON.stringify(["O(1)", "O(n)", "O(log n)", "O(n^2)"]),
+      0,
+      "Push and pop operate exclusively on the top index of the stack, giving constant time O(1) complexity.",
+      "Stacks & Queues",
+      "easy",
+      "curated"
+    );
+
+    qInsert.run(
+      "q-2",
+      demoUserId,
+      c1Id,
+      m1Id,
+      "Which data structure is primarily used to implement Breadth-First Search (BFS) graph traversal?",
+      JSON.stringify(["Stack", "Queue", "Priority Queue", "Hash Table"]),
+      1,
+      "BFS visits vertices level by level, maintaining unvisited adjacent nodes in FIFO order using a Queue.",
+      "Graph Algorithms",
+      "medium",
+      "curated"
+    );
+
+    qInsert.run(
+      "q-3",
+      demoUserId,
+      c1Id,
+      m1Id,
+      "What happens when pop() is called on an empty stack?",
+      JSON.stringify(["Stack Overflow", "Stack Underflow", "Memory Allocation Error", "Segmentation Fault"]),
+      1,
+      "Attempting to remove an item from an already empty data structure causes Stack Underflow.",
+      "Stacks & Queues",
+      "easy",
+      "curated"
+    );
+
+    qInsert.run(
+      "q-4",
+      demoUserId,
+      c2Id,
+      null,
+      "In the pre-colonial Hausa political structure, who was the supreme administrative and judicial ruler of the city-state?",
+      JSON.stringify(["The Emir (Sarki)", "The Oba", "The Alaafin", "The Obi"]),
+      0,
+      "In Hausa-Fulani traditional kingdoms, the Sarki (Emir) served as chief executive and judicial leader.",
+      "Pre-colonial Governance",
+      "easy",
+      "curated"
+    );
+
+    const taskInsert = db.prepare(`
+      INSERT INTO study_tasks (id, user_id, course_id, title, description, due_date, is_completed)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    taskInsert.run("t-1", demoUserId, c1Id, "Review Stack/Queue past questions", "Solve 15 practice CBT questions before next Monday", "2026-11-05", 0);
+    taskInsert.run("t-2", demoUserId, c2Id, "Read GST 111 Module 2 on Niger Delta cultures", "Summarize key cultural practices and trade alliances", "2026-11-10", 0);
+    taskInsert.run("t-3", demoUserId, c1Id, "Prepare for Mid-Semester CBT Mock Exam", "Simulate 30-minute test in the CBT simulator", "2026-11-12", 0);
+  }
+} catch (err) {
+  console.warn("Seed skipped or table error:", err.message);
+}
+
 export default db;

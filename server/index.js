@@ -9,16 +9,21 @@ import multer from "multer";
 import { z } from "zod";
 import db from "./db.js";
 import { createRequire } from "module";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { readFileSync, existsSync } from "fs";
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const SQLiteStore = require("connect-sqlite3")(session);
 
 const app = express();
+app.set("trust proxy", 1);
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "2mb" }));
 app.use(cors({
-  origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+  origin: true,
   credentials: true
 }));
 
@@ -26,7 +31,7 @@ const sessionStore = new SQLiteStore({ dir: "./data", db: "sessions.db" });
 
 app.use(session({
   store: sessionStore,
-  secret: process.env.SESSION_SECRET || "change-this-in-production-" + Math.random(),
+  secret: process.env.SESSION_SECRET || "exampilot-session-secret-key-ng",
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -36,6 +41,16 @@ app.use(session({
     maxAge: 7 * 24 * 60 * 60 * 1000
   }
 }));
+
+// Session fallback for iframe previews where third-party cookies may be restricted
+app.use((req, _res, next) => {
+  const headerUserId = req.headers["x-user-id"] || (req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.slice(7) : null);
+  if (!req.session) req.session = {};
+  if (!req.session.userId && headerUserId) {
+    req.session.userId = headerUserId;
+  }
+  next();
+});
 
 // ── Rate limiters ─────────────────────────────────────────────────────────────
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
@@ -354,8 +369,8 @@ app.post("/api/conversations/:id/ask", requireAuth, aiLimiter, async (req, res) 
   if (!result.success) return validationError(res, result.error.issues);
   const { question } = result.data;
 
-  const apiKey = process.env.AI_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: "AI is not configured. Add AI_API_KEY to the server .env file." });
+  const apiKey = process.env.AI_API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: "AI is not configured. Add AI_API_KEY or GEMINI_API_KEY to the server .env file." });
 
   let contextText = "";
   if (conv.material_id) {
@@ -367,8 +382,9 @@ app.post("/api/conversations/:id/ask", requireAuth, aiLimiter, async (req, res) 
   const userMsgId = uuidv4();
   db.prepare("INSERT INTO ai_messages (id, conversation_id, role, content) VALUES (?, ?, 'user', ?)").run(userMsgId, req.params.id, question);
 
-  const baseUrl = (process.env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
-  const model = process.env.AI_MODEL || "gpt-4o-mini";
+  const isGemini = !process.env.AI_API_KEY && !!process.env.GEMINI_API_KEY;
+  const baseUrl = (process.env.AI_BASE_URL || (isGemini ? "https://generativelanguage.googleapis.com/v1beta/openai" : "https://api.openai.com/v1")).replace(/\/+$/, "");
+  const model = process.env.AI_MODEL || (isGemini ? "gemini-2.5-flash" : "gpt-4o-mini");
 
   try {
     const upstream = await fetch(`${baseUrl}/chat/completions`, {
@@ -445,8 +461,8 @@ app.post("/api/questions/generate", requireAuth, aiLimiter, async (req, res) => 
   if (!result.success) return validationError(res, result.error.issues);
   const { course_id, material_id, count, difficulty, topic } = result.data;
 
-  const apiKey = process.env.AI_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: "AI is not configured. Add AI_API_KEY to your server .env file." });
+  const apiKey = process.env.AI_API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: "AI is not configured. Add AI_API_KEY or GEMINI_API_KEY to your server .env file." });
 
   let context = "";
   if (material_id) {
@@ -459,8 +475,9 @@ app.post("/api/questions/generate", requireAuth, aiLimiter, async (req, res) => 
   }
 
   const topicHint = topic ? ` Focus on the topic: ${topic}.` : "";
-  const baseUrl = (process.env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
-  const model = process.env.AI_MODEL || "gpt-4o-mini";
+  const isGemini = !process.env.AI_API_KEY && !!process.env.GEMINI_API_KEY;
+  const baseUrl = (process.env.AI_BASE_URL || (isGemini ? "https://generativelanguage.googleapis.com/v1beta/openai" : "https://api.openai.com/v1")).replace(/\/+$/, "");
+  const model = process.env.AI_MODEL || (isGemini ? "gemini-2.5-flash" : "gpt-4o-mini");
 
   const systemPrompt = `You are an exam question generator for Nigerian university students. Generate exactly ${count} multiple-choice practice questions at ${difficulty} difficulty.${topicHint}${context}
 
@@ -777,7 +794,7 @@ app.get("/api/performance", requireAuth, (req, res) => {
 
 app.get("/api/dashboard", requireAuth, (req, res) => {
   const uid = req.session.userId;
-  const courses = db.prepare(`SELECT c.*, (SELECT COUNT(*) FROM study_materials m WHERE m.course_id = c.id) AS material_count FROM courses WHERE user_id = ? ORDER BY created_at DESC LIMIT 5`).all(uid);
+  const courses = db.prepare(`SELECT c.*, (SELECT COUNT(*) FROM study_materials m WHERE m.course_id = c.id) AS material_count FROM courses c WHERE c.user_id = ? ORDER BY c.created_at DESC LIMIT 5`).all(uid);
   const recentAttempts = db.prepare(`SELECT a.*, c.title AS course_title FROM exam_attempts a LEFT JOIN courses c ON a.course_id = c.id WHERE a.user_id = ? AND a.status = 'submitted' ORDER BY a.submitted_at DESC LIMIT 5`).all(uid);
   const pendingTasks = db.prepare(`SELECT t.*, c.title AS course_title FROM study_tasks t LEFT JOIN courses c ON t.course_id = c.id WHERE t.user_id = ? AND t.is_completed = 0 ORDER BY t.due_date ASC, t.created_at DESC LIMIT 5`).all(uid);
   const counts = {
@@ -799,5 +816,32 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: "An unexpected error occurred." });
 });
 
-const port = Number(process.env.PORT || 3001);
-app.listen(port, "0.0.0.0", () => console.log(`ExamPilot API listening on http://localhost:${port}`));
+const isProduction = process.env.NODE_ENV === "production";
+const distDir = join(__dirname, "..", "dist");
+
+if (!isProduction) {
+  const { createServer: createViteServer } = await import("vite");
+  const vite = await createViteServer({
+    server: { middlewareMode: true, hmr: false },
+    appType: "custom"
+  });
+  app.use(vite.middlewares);
+  app.use("*", async (req, res, next) => {
+    try {
+      let template = readFileSync(join(__dirname, "..", "index.html"), "utf-8");
+      template = await vite.transformIndexHtml(req.originalUrl, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(template);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+} else {
+  app.use(express.static(distDir));
+  app.get("*", (_req, res) => {
+    res.sendFile(join(distDir, "index.html"));
+  });
+}
+
+const port = Number(process.env.PORT || 3000);
+app.listen(port, "0.0.0.0", () => console.log(`ExamPilot NG listening on http://0.0.0.0:${port}`));
